@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fafafa;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.MuiContainer-root {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+/* 针对简历预览部分的特殊样式 */
+#resume-preview {
+  min-height: calc(100vh - 200px);
+}
