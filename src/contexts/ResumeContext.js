@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useMemo } from 'react';
 
 const ResumeContext = createContext();
 
@@ -10,14 +10,14 @@ const initialState = {
     phone: '',
     address: '',
     photo: '',
-    summary: ''
+    summary: '',
+    birthYear: '',
+    school: ''
   },
   sections: {
     education: [],
     experience: [],
-    projects: [],
-    skills: [],
-    languages: []
+    projects: []
   },
   template: 'classic',
   theme: {
@@ -98,16 +98,31 @@ function resumeReducer(state, action) {
         ...state,
         sections: {
           ...currentSections,
-          projects: [...currentSections.projects, action.payload]
+          projects: [...currentSections.projects, { 
+            id: action.payload.id,
+            name: action.payload.name || '',
+            role: action.payload.role || '',
+            startDate: action.payload.startDate || '',
+            endDate: action.payload.endDate || '',
+            description: action.payload.description || ''
+          }]
         }
       };
+
     case 'UPDATE_PROJECT':
       return {
         ...state,
         sections: {
           ...currentSections,
           projects: currentSections.projects.map((project, idx) =>
-            idx === action.index ? action.payload : project
+            idx === action.index ? { 
+              ...action.payload,
+              name: action.payload.name || '',
+              role: action.payload.role || '',
+              startDate: action.payload.startDate || '',
+              endDate: action.payload.endDate || '',
+              description: action.payload.description || ''
+            } : project
           )
         }
       };
@@ -168,38 +183,37 @@ function resumeReducer(state, action) {
 }
 
 export const ResumeProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(resumeReducer, () => {
-    try {
-      const savedResume = localStorage.getItem('resumeData');
-      if (savedResume) {
-        const parsedData = JSON.parse(savedResume);
-        // Merge with initialState to fix missing fields
-        return {
-          ...initialState,
-          ...parsedData,
-          sections: {
-            ...initialState.sections,
-            ...parsedData.sections
-          },
-          theme: {
-            ...initialState.theme,
-            ...parsedData.theme
-          }
-        };
-      }
-      return initialState;
-    } catch (error) {
-      console.error('Error loading resume data:', error);
-      return initialState;
-    }
-  });
+  const [state, dispatch] = useReducer(resumeReducer, initialState);
 
-  React.useEffect(() => {
-    localStorage.setItem('resumeData', JSON.stringify(state));
+  // 异步初始化状态
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const savedResume = localStorage.getItem('resumeData');
+        if (savedResume) {
+          const parsedData = JSON.parse(savedResume);
+          dispatch({ type: 'LOAD_RESUME', payload: parsedData });
+        }
+      } catch (error) {
+        console.error('Error loading resume data:', error);
+      }
+    };
+    loadData();
+  }, []);
+
+  // 节流写入 localStorage
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem('resumeData', JSON.stringify(state));
+    }, 500); // 延迟 500ms 写入
+    return () => clearTimeout(timer);
   }, [state]);
 
+  // 使用 useMemo 缓存 context 值
+  const contextValue = useMemo(() => ({ state, dispatch }), [state]);
+
   return (
-    <ResumeContext.Provider value={{ state, dispatch }}>
+    <ResumeContext.Provider value={contextValue}>
       {children}
     </ResumeContext.Provider>
   );
